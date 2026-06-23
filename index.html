@@ -32,6 +32,143 @@
     <link rel="stylesheet" crossorigin href="/assets/index-LDbrQq_K.css">
   </head>
   <body>
+    <!-- イントロ動画オーバーレイ -->
+    <div id="intro-overlay">
+      <div id="intro-video-container">
+        <iframe
+          id="intro-video"
+          src="https://www.youtube.com/embed/tW2QHgRQiqE?autoplay=1&mute=1&controls=1&modestbranding=1&rel=0&playsinline=1&enablejsapi=1&origin=https://all.studioq.co.jp"
+          allow="autoplay; encrypted-media"
+          allowfullscreen
+          frameborder="0"
+        ></iframe>
+      </div>
+      <button id="intro-skip" aria-label="スキップ">
+        スキップ ▶
+      </button>
+    </div>
+
+    <style>
+      #intro-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.6s ease;
+      }
+      #intro-overlay.fade-out {
+        opacity: 0;
+        pointer-events: none;
+      }
+      #intro-video-container {
+        position: relative;
+        width: 100%;
+        max-width: 400px;
+        aspect-ratio: 9 / 16;
+      }
+      #intro-video {
+        width: 100%;
+        height: 100%;
+        border: none;
+        border-radius: 12px;
+      }
+      #intro-skip {
+        position: fixed;
+        bottom: 40px;
+        right: 40px;
+        background: rgba(255,255,255,0.2);
+        color: #fff;
+        border: 1px solid rgba(255,255,255,0.5);
+        padding: 10px 24px;
+        border-radius: 30px;
+        font-size: 15px;
+        cursor: pointer;
+        transition: background 0.3s;
+        z-index: 100000;
+        backdrop-filter: blur(4px);
+      }
+      #intro-skip:hover {
+        background: rgba(255,255,255,0.4);
+      }
+      @media (max-width: 640px) {
+        #intro-video-container {
+          max-width: 100%;
+          height: 100%;
+          aspect-ratio: auto;
+        }
+        #intro-video {
+          border-radius: 0;
+        }
+        #intro-skip {
+          bottom: 20px;
+          right: 20px;
+          font-size: 13px;
+          padding: 8px 18px;
+        }
+      }
+    </style>
+
+    <script>
+      (function() {
+        var overlay = document.getElementById('intro-overlay');
+        var skipBtn = document.getElementById('intro-skip');
+        var videoIframe = document.getElementById('intro-video');
+        var dismissed = false;
+
+        function dismissOverlay() {
+          if (dismissed) return;
+          dismissed = true;
+          overlay.classList.add('fade-out');
+          setTimeout(function() {
+            overlay.remove();
+          }, 700);
+        }
+
+        skipBtn.addEventListener('click', dismissOverlay);
+
+        // YouTube IFrame Player APIで動画終了を検知
+        var tag = document.createElement('script');
+        tag.src = 'https://www.youtube.com/iframe_api';
+        document.head.appendChild(tag);
+
+        var apiReadyHandler = function() {
+          try {
+            var player = new YT.Player('intro-video', {
+              events: {
+                onStateChange: function(event) {
+                  if (event.data === YT.PlayerState.ENDED) {
+                    dismissOverlay();
+                  }
+                }
+              }
+            });
+          } catch(e) {
+            // API初期化失敗時はスキップボタンに任せる
+          }
+        };
+
+        // APIが既に読み込まれている場合の対応
+        if (window.YT && window.YT.Player) {
+          apiReadyHandler();
+        } else {
+          var origCallback = window.onYouTubeIframeAPIReady;
+          window.onYouTubeIframeAPIReady = function() {
+            apiReadyHandler();
+            if (typeof origCallback === 'function') origCallback();
+          };
+        }
+
+        // フォールバック: 120秒後に自動的にオーバーレイを閉じる
+        setTimeout(dismissOverlay, 120000);
+      })();
+    </script>
+
     <!-- Netlify Forms検出用の静的フォーム（非表示） -->
     <form hidden method='post' name='contact'>
       <input type="hidden" name="form-name" value="contact" />
